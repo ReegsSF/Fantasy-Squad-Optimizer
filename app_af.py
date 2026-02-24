@@ -3,7 +3,7 @@ import pandas as pd
 import tempfile
 import os
 
-from optimizer_fantasy import run_optimizer  # fantasy optimizer
+from optimizer_fantasy_copy import run_optimizer
 
 # -----------------------------
 # PAGE SETUP
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔵 AFL Fantasy Optimizer 🔵")
+st.title("🔥 AFL Fantasy Optimizer")
 st.write("Upload your AFL Fantasy CSV and run the optimizer.")
 
 # -----------------------------
@@ -41,11 +41,14 @@ if uploaded_file is not None:
                 st.success("Optimization complete!")
 
                 # -----------------------------
-                # ON FIELD DISPLAY
+                # ON FIELD DISPLAY (SORT BY PRICE)
                 # -----------------------------
                 st.subheader("🏆 ON FIELD")
 
-                on_field = squad[squad["role"] == "On Field"]
+                on_field = (
+                    squad[squad["role"] == "On Field"]
+                    .sort_values("price")   # ✅ SORT HERE
+                )
 
                 for pos in ["DEF", "MID", "RUC", "FWD"]:
                     st.markdown(f"### {pos}")
@@ -64,11 +67,14 @@ if uploaded_file is not None:
                         )
 
                 # -----------------------------
-                # BENCH DISPLAY
+                # BENCH DISPLAY (SORT BY PRICE)
                 # -----------------------------
                 st.subheader("🪑 BENCH")
 
-                bench = squad[squad["role"] == "Bench"]
+                bench = (
+                    squad[squad["role"] == "Bench"]
+                    .sort_values("price")   # ✅ SORT HERE
+                )
 
                 for pos in ["DEF", "MID", "RUC", "FWD", "UTIL"]:
                     st.markdown(f"### {pos}")
