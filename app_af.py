@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔥 AFL Fantasy Optimizer")
+st.title("🔵 AFL Fantasy Optimizer 🔵")
 st.write("Upload your AFL Fantasy CSV and run the optimizer.")
 
 # -----------------------------
@@ -40,20 +40,23 @@ if uploaded_file is not None:
 
                 st.success("Optimization complete!")
 
+                # Ensure price is numeric (safety)
+                squad["price"] = pd.to_numeric(squad["price"])
+
                 # -----------------------------
-                # ON FIELD DISPLAY (SORT BY PRICE)
+                # ON FIELD DISPLAY (SORT BY PRICE PER LINE)
                 # -----------------------------
                 st.subheader("🏆 ON FIELD")
 
-                on_field = (
-                    squad[squad["role"] == "On Field"]
-                    .sort_values("price")   # ✅ SORT HERE
-                )
+                on_field = squad[squad["role"] == "On Field"]
 
                 for pos in ["DEF", "MID", "RUC", "FWD"]:
                     st.markdown(f"### {pos}")
 
-                    rows = on_field[on_field["line"] == pos]
+                    rows = (
+                        on_field[on_field["line"] == pos]
+                        .sort_values("price")   # ✅ SORT HERE (PER LINE)
+                    )
 
                     if rows.empty:
                         st.write("_No players_")
@@ -67,19 +70,19 @@ if uploaded_file is not None:
                         )
 
                 # -----------------------------
-                # BENCH DISPLAY (SORT BY PRICE)
+                # BENCH DISPLAY (SORT BY PRICE PER LINE)
                 # -----------------------------
                 st.subheader("🪑 BENCH")
 
-                bench = (
-                    squad[squad["role"] == "Bench"]
-                    .sort_values("price")   # ✅ SORT HERE
-                )
+                bench = squad[squad["role"] == "Bench"]
 
                 for pos in ["DEF", "MID", "RUC", "FWD", "UTIL"]:
                     st.markdown(f"### {pos}")
 
-                    rows = bench[bench["line"] == pos]
+                    rows = (
+                        bench[bench["line"] == pos]
+                        .sort_values("price")   # ✅ SORT HERE (PER LINE)
+                    )
 
                     if rows.empty:
                         st.write("_No players_")
@@ -121,4 +124,3 @@ if uploaded_file is not None:
                 st.exception(e)
 
     os.unlink(temp_csv_path)
-
