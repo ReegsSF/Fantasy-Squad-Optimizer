@@ -55,18 +55,8 @@ def run_optimizer(input_csv_path):
     model = LpProblem("AFL_Fantasy_2026", LpMaximize)
 
     x = LpVariable.dicts("squad", players, cat="Binary")
-
-    y = LpVariable.dicts(
-        "onfield",
-        [(p, pos) for p in players for pos in field_positions],
-        cat="Binary"
-    )
-
-    z = LpVariable.dicts(
-        "bench",
-        [(p, pos) for p in players for pos in bench_positions],
-        cat="Binary"
-    )
+    y = LpVariable.dicts("onfield", [(p, pos) for p in players for pos in field_positions], cat="Binary")
+    z = LpVariable.dicts("bench", [(p, pos) for p in players for pos in bench_positions], cat="Binary")
 
     # ------------------------
     # OBJECTIVE
@@ -85,16 +75,13 @@ def run_optimizer(input_csv_path):
     model += lpSum(x[p] for p in players if "RUC" in df.loc[p, "positions"]) == 3
 
     # ------------------------
-    # ON FIELD STRUCTURE
+    # STRUCTURE
     # ------------------------
     model += lpSum(y[(p, "DEF")] for p in players) == 6
     model += lpSum(y[(p, "MID")] for p in players) == 8
     model += lpSum(y[(p, "RUC")] for p in players) == 2
     model += lpSum(y[(p, "FWD")] for p in players) == 6
 
-    # ------------------------
-    # BENCH STRUCTURE
-    # ------------------------
     model += lpSum(z[(p, "DEF")] for p in players) == 2
     model += lpSum(z[(p, "MID")] for p in players) == 2
     model += lpSum(z[(p, "RUC")] for p in players) == 1
@@ -102,7 +89,7 @@ def run_optimizer(input_csv_path):
     model += lpSum(z[(p, "UTIL")] for p in players) == 1
 
     # ------------------------
-    # PLAYER ASSIGNMENT RULES
+    # ASSIGNMENT RULES
     # ------------------------
     for p in players:
 
@@ -137,45 +124,33 @@ def run_optimizer(input_csv_path):
         raise Exception("Infeasible solution")
 
     # ------------------------
-    # BUILD OUTPUT
+    # OUTPUT (NO ORDERING)
     # ------------------------
-    on_field = []
-    bench = []
+    rows = []
 
     for p in players:
         for pos in field_positions:
             if y[(p, pos)].value() == 1:
-                on_field.append((p, pos))
+                rows.append({
+                    "name": df.loc[p, "name"],
+                    "line": pos,
+                    "position": df.loc[p, "position"],
+                    "price": float(df.loc[p, "price"]),
+                    "expected_avg": df.loc[p, "expected_avg"],
+                    "adjusted_avg": df.loc[p, "adjusted_avg"],
+                    "role": "On Field"
+                })
+
         for pos in bench_positions:
             if z[(p, pos)].value() == 1:
-                bench.append((p, pos))
+                rows.append({
+                    "name": df.loc[p, "name"],
+                    "line": pos,
+                    "position": df.loc[p, "position"],
+                    "price": float(df.loc[p, "price"]),
+                    "expected_avg": df.loc[p, "expected_avg"],
+                    "adjusted_avg": df.loc[p, "adjusted_avg"],
+                    "role": "Bench"
+                })
 
-    on_field_df = pd.DataFrame([
-        {
-            "name": df.loc[p, "name"],
-            "line": pos,
-            "position": df.loc[p, "position"],
-            "price": df.loc[p, "price"],
-            "expected_avg": df.loc[p, "expected_avg"],
-            "adjusted_avg": df.loc[p, "adjusted_avg"],
-            "role": "On Field"
-        }
-        for p, pos in on_field
-    ])
-
-    bench_df = pd.DataFrame([
-        {
-            "name": df.loc[p, "name"],
-            "line": pos,
-            "position": df.loc[p, "position"],
-            "price": df.loc[p, "price"],
-            "expected_avg": df.loc[p, "expected_avg"],
-            "adjusted_avg": df.loc[p, "adjusted_avg"],
-            "role": "Bench"
-        }
-        for p, pos in bench
-    ])
-
-    output = pd.concat([on_field_df, bench_df], ignore_index=True)
-
-    return output
+    return pd.DataFrame(rows).reset_index(drop=True)
