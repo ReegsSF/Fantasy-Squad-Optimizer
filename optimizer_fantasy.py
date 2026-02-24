@@ -19,9 +19,7 @@ def run_optimizer(input_csv_path):
     # DETECT EARLY BYE
     # ------------------------
     def detect_early_bye(val):
-        if isinstance(val, str) and "|" in val:
-            return 1
-        return 0
+        return 1 if isinstance(val, str) and "|" in val else 0
 
     df["early_bye"] = df["bye"].apply(detect_early_bye)
 
@@ -46,6 +44,7 @@ def run_optimizer(input_csv_path):
     df["adjusted_avg"] = df.apply(apply_bye_adjustment, axis=1)
 
     players = df.index.tolist()
+
     field_positions = ["DEF", "MID", "RUC", "FWD"]
     bench_positions = ["DEF", "MID", "RUC", "FWD", "UTIL"]
 
@@ -124,7 +123,7 @@ def run_optimizer(input_csv_path):
         raise Exception("Infeasible solution")
 
     # ------------------------
-    # OUTPUT (NO ORDERING)
+    # BUILD OUTPUT (CORRECT ORDERING)
     # ------------------------
     rows = []
 
@@ -155,12 +154,10 @@ def run_optimizer(input_csv_path):
 
     output = pd.DataFrame(rows)
 
-# ✅ FORCE SORT ORDER HERE
-output["price"] = pd.to_numeric(output["price"], errors="coerce")
+    # ✅ THIS IS THE FIX
+    output = output.sort_values(
+        by=["role", "line", "price"],
+        ascending=[True, True, True]
+    ).reset_index(drop=True)
 
-output = output.sort_values(
-    by=["role", "line", "price"],
-    ascending=[True, True, True]
-).reset_index(drop=True)
-
-return output
+    return output
