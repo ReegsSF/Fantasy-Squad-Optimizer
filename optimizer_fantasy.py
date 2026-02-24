@@ -13,25 +13,25 @@ def run_optimizer(input_csv_path):
     df = pd.read_csv(input_csv_path)
     df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
 
-    # Force numeric price immediately
+    # Force numeric price
     df["price"] = (
         df["price"]
         .astype(str)
-        .str.replace(r"[^\d.]", "", regex=True)
+        .str.replace(r"[^\d]", "", regex=True)
         .astype(float)
     )
 
-    df["positions"] = df["position"].apply(lambda x: x.split("|"))
+    df["positions"] = df["position"].astype(str).apply(lambda x: x.split("|"))
 
     # ------------------------
-    # DETECT EARLY BYE
+    # EARLY BYE FLAG
     # ------------------------
     df["early_bye"] = df["bye"].apply(
         lambda x: 1 if isinstance(x, str) and "|" in x else 0
     )
 
     # ------------------------
-    # APPLY BYE ADJUSTMENT
+    # BYE ADJUSTMENT
     # ------------------------
     def apply_bye_adjustment(row):
         avg = row["expected_avg"]
@@ -138,7 +138,7 @@ def run_optimizer(input_csv_path):
         raise Exception("Infeasible solution")
 
     # ------------------------
-    # BUILD OUTPUT (SORTED BY PRICE)
+    # BUILD OUTPUT
     # ------------------------
     rows = []
 
@@ -147,34 +147,50 @@ def run_optimizer(input_csv_path):
             if y[(p, pos)].value() == 1:
                 rows.append({
                     "name": df.loc[p, "name"],
+                    "role": "On Field",
                     "line": pos,
                     "position": df.loc[p, "position"],
                     "price": df.loc[p, "price"],
                     "expected_avg": df.loc[p, "expected_avg"],
                     "adjusted_avg": df.loc[p, "adjusted_avg"],
-                    "role": "On Field"
                 })
 
         for pos in bench_positions:
             if z[(p, pos)].value() == 1:
                 rows.append({
                     "name": df.loc[p, "name"],
+                    "role": "Bench",
                     "line": pos,
                     "position": df.loc[p, "position"],
                     "price": df.loc[p, "price"],
                     "expected_avg": df.loc[p, "expected_avg"],
                     "adjusted_avg": df.loc[p, "adjusted_avg"],
-                    "role": "Bench"
                 })
 
     output = pd.DataFrame(rows)
 
-    # FINAL GUARANTEED SORT
-    output = output.sort_values(
-    by=["role", "line", "price"],
-    ascending=[False,False,False]  # ← PREMIUMS FIRST
-).reset_index(drop=True)
+    # ------------------------
+    # HARD SORT: PREMIUM → ROOKIE
+    # ------------------------
+    output["role"] = pd.Categorical(
+        output["role"],
+        categories=["On Field", "Bench"],
+        ordered=True
+    )
+
+    output["line"] = pd.Categorical(
+        output["line"],
+        categories=["DEF", "MID", "RUC", "FWD", "UTIL"],
+        ordered=True
+    )
+
+    output = (
+        output
+        .sort_values(
+            by=["role", "line", "price"],
+            ascending=[True, True, False]  # MOST expensive first
+        )
+        .reset_index(drop=True)
+    )
 
     return output
-
-
