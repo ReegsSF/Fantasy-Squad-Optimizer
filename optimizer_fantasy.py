@@ -172,8 +172,9 @@ def run_optimizer(input_csv_path):
     # FINAL GUARANTEED SORT
     output = output.sort_values(
     by=["role", "line", "price"],
-    ascending=[False]  # ← PREMIUMS FIRST
+    ascending=[False,False,False]  # ← PREMIUMS FIRST
 ).reset_index(drop=True)
 
     return output
+
 
