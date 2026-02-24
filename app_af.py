@@ -40,17 +40,13 @@ if uploaded_file is not None:
 
                 st.success("Optimization complete!")
 
-                # ✅ FORCE PRICE TO BE NUMERIC (THIS WAS THE ISSUE)
-                squad["price"] = (
-                    squad["price"]
-                    .astype(str)
-                    .str.replace("$", "", regex=False)
-                    .str.replace(",", "", regex=False)
-                    .astype(float)
-                )
+                # -----------------------------
+                # ENSURE NUMERIC PRICE (NO REORDER)
+                # -----------------------------
+                squad["price"] = pd.to_numeric(squad["price"], errors="coerce")
 
                 # -----------------------------
-                # ON FIELD DISPLAY (SORT BY PRICE)
+                # ON FIELD (PREMIUM → ROOKIE)
                 # -----------------------------
                 st.subheader("🏆 ON FIELD")
 
@@ -60,10 +56,9 @@ if uploaded_file is not None:
                     st.markdown(f"### {pos}")
 
                     rows = (
-    on_field[on_field["line"] == pos]
-    .sort_values("price")
-    .reset_index(drop=True)   # 👈 THIS LINE
-)
+                        on_field[on_field["line"] == pos]
+                        .sort_values("price", ascending=False)
+                    )
 
                     if rows.empty:
                         st.write("_No players_")
@@ -77,7 +72,7 @@ if uploaded_file is not None:
                         )
 
                 # -----------------------------
-                # BENCH DISPLAY (SORT BY PRICE)
+                # BENCH (PREMIUM → ROOKIE)
                 # -----------------------------
                 st.subheader("🪑 BENCH")
 
@@ -87,10 +82,9 @@ if uploaded_file is not None:
                     st.markdown(f"### {pos}")
 
                     rows = (
-    bench[bench["line"] == pos]
-    .sort_values("price")
-    .reset_index(drop=True)   # 👈 SAME LINE
-)
+                        bench[bench["line"] == pos]
+                        .sort_values("price", ascending=False)
+                    )
 
                     if rows.empty:
                         st.write("_No players_")
@@ -108,9 +102,7 @@ if uploaded_file is not None:
                 # -----------------------------
                 st.subheader("📊 SUMMARY")
 
-                st.write(
-                    f"**Total Squad Price:** ${int(squad['price'].sum()):,}"
-                )
+                st.write(f"**Total Squad Price:** ${int(squad['price'].sum()):,}")
                 st.write(
                     f"**Total Adjusted Avg:** {round(squad['adjusted_avg'].sum(), 2)}"
                 )
@@ -132,4 +124,3 @@ if uploaded_file is not None:
                 st.exception(e)
 
     os.unlink(temp_csv_path)
-
