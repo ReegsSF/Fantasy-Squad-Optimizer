@@ -13,15 +13,22 @@ def run_optimizer(input_csv_path):
     df = pd.read_csv(input_csv_path)
     df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
 
+    # Force numeric price immediately
+    df["price"] = (
+        df["price"]
+        .astype(str)
+        .str.replace(r"[^\d.]", "", regex=True)
+        .astype(float)
+    )
+
     df["positions"] = df["position"].apply(lambda x: x.split("|"))
 
     # ------------------------
     # DETECT EARLY BYE
     # ------------------------
-    def detect_early_bye(val):
-        return 1 if isinstance(val, str) and "|" in val else 0
-
-    df["early_bye"] = df["bye"].apply(detect_early_bye)
+    df["early_bye"] = df["bye"].apply(
+        lambda x: 1 if isinstance(x, str) and "|" in x else 0
+    )
 
     # ------------------------
     # APPLY BYE ADJUSTMENT
@@ -54,8 +61,16 @@ def run_optimizer(input_csv_path):
     model = LpProblem("AFL_Fantasy_2026", LpMaximize)
 
     x = LpVariable.dicts("squad", players, cat="Binary")
-    y = LpVariable.dicts("onfield", [(p, pos) for p in players for pos in field_positions], cat="Binary")
-    z = LpVariable.dicts("bench", [(p, pos) for p in players for pos in bench_positions], cat="Binary")
+    y = LpVariable.dicts(
+        "onfield",
+        [(p, pos) for p in players for pos in field_positions],
+        cat="Binary"
+    )
+    z = LpVariable.dicts(
+        "bench",
+        [(p, pos) for p in players for pos in bench_positions],
+        cat="Binary"
+    )
 
     # ------------------------
     # OBJECTIVE
@@ -123,7 +138,7 @@ def run_optimizer(input_csv_path):
         raise Exception("Infeasible solution")
 
     # ------------------------
-    # BUILD OUTPUT (CORRECT ORDERING)
+    # BUILD OUTPUT (SORTED BY PRICE)
     # ------------------------
     rows = []
 
@@ -134,7 +149,7 @@ def run_optimizer(input_csv_path):
                     "name": df.loc[p, "name"],
                     "line": pos,
                     "position": df.loc[p, "position"],
-                    "price": float(df.loc[p, "price"]),
+                    "price": df.loc[p, "price"],
                     "expected_avg": df.loc[p, "expected_avg"],
                     "adjusted_avg": df.loc[p, "adjusted_avg"],
                     "role": "On Field"
@@ -146,7 +161,7 @@ def run_optimizer(input_csv_path):
                     "name": df.loc[p, "name"],
                     "line": pos,
                     "position": df.loc[p, "position"],
-                    "price": float(df.loc[p, "price"]),
+                    "price": df.loc[p, "price"],
                     "expected_avg": df.loc[p, "expected_avg"],
                     "adjusted_avg": df.loc[p, "adjusted_avg"],
                     "role": "Bench"
@@ -154,7 +169,7 @@ def run_optimizer(input_csv_path):
 
     output = pd.DataFrame(rows)
 
-    # ✅ THIS IS THE FIX
+    # FINAL GUARANTEED SORT
     output = output.sort_values(
         by=["role", "line", "price"],
         ascending=[True, True, True]
