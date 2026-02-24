@@ -40,11 +40,17 @@ if uploaded_file is not None:
 
                 st.success("Optimization complete!")
 
-                # Ensure price is numeric (safety)
-                squad["price"] = pd.to_numeric(squad["price"])
+                # ✅ FORCE PRICE TO BE NUMERIC (THIS WAS THE ISSUE)
+                squad["price"] = (
+                    squad["price"]
+                    .astype(str)
+                    .str.replace("$", "", regex=False)
+                    .str.replace(",", "", regex=False)
+                    .astype(float)
+                )
 
                 # -----------------------------
-                # ON FIELD DISPLAY (SORT BY PRICE PER LINE)
+                # ON FIELD DISPLAY (SORT BY PRICE)
                 # -----------------------------
                 st.subheader("🏆 ON FIELD")
 
@@ -55,7 +61,7 @@ if uploaded_file is not None:
 
                     rows = (
                         on_field[on_field["line"] == pos]
-                        .sort_values("price")   # ✅ SORT HERE (PER LINE)
+                        .sort_values("price", ascending=True)
                     )
 
                     if rows.empty:
@@ -65,12 +71,12 @@ if uploaded_file is not None:
                     for _, r in rows.iterrows():
                         st.write(
                             f"**{r['name']}** ({r['position']}) — "
-                            f"${r['price']:,} | "
+                            f"${int(r['price']):,} | "
                             f"Adj Avg: {round(r['adjusted_avg'], 1)}"
                         )
 
                 # -----------------------------
-                # BENCH DISPLAY (SORT BY PRICE PER LINE)
+                # BENCH DISPLAY (SORT BY PRICE)
                 # -----------------------------
                 st.subheader("🪑 BENCH")
 
@@ -81,7 +87,7 @@ if uploaded_file is not None:
 
                     rows = (
                         bench[bench["line"] == pos]
-                        .sort_values("price")   # ✅ SORT HERE (PER LINE)
+                        .sort_values("price", ascending=True)
                     )
 
                     if rows.empty:
@@ -91,7 +97,7 @@ if uploaded_file is not None:
                     for _, r in rows.iterrows():
                         st.write(
                             f"**{r['name']}** ({r['position']}) — "
-                            f"${r['price']:,} | "
+                            f"${int(r['price']):,} | "
                             f"Adj Avg: {round(r['adjusted_avg'], 1)}"
                         )
 
