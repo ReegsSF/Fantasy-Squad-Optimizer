@@ -60,9 +60,10 @@ if uploaded_file is not None:
                     st.markdown(f"### {pos}")
 
                     rows = (
-                        on_field[on_field["line"] == pos]
-                        .sort_values("price", ascending=True)
-                    )
+    on_field[on_field["line"] == pos]
+    .sort_values("price")
+    .reset_index(drop=True)   # 👈 THIS LINE
+)
 
                     if rows.empty:
                         st.write("_No players_")
@@ -86,9 +87,10 @@ if uploaded_file is not None:
                     st.markdown(f"### {pos}")
 
                     rows = (
-                        bench[bench["line"] == pos]
-                        .sort_values("price", ascending=True)
-                    )
+    bench[bench["line"] == pos]
+    .sort_values("price")
+    .reset_index(drop=True)   # 👈 SAME LINE
+)
 
                     if rows.empty:
                         st.write("_No players_")
@@ -130,3 +132,4 @@ if uploaded_file is not None:
                 st.exception(e)
 
     os.unlink(temp_csv_path)
+
