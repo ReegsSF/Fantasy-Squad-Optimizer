@@ -153,4 +153,14 @@ def run_optimizer(input_csv_path):
                     "role": "Bench"
                 })
 
-    return pd.DataFrame(rows).reset_index(drop=True)
+    output = pd.DataFrame(rows)
+
+# ✅ FORCE SORT ORDER HERE
+output["price"] = pd.to_numeric(output["price"], errors="coerce")
+
+output = output.sort_values(
+    by=["role", "line", "price"],
+    ascending=[True, True, True]
+).reset_index(drop=True)
+
+return output
