@@ -3,7 +3,7 @@ import pandas as pd
 import tempfile
 import os
 
-from optimizer_fantasy import run_optimizer
+from optimizer_fantasy_copy import run_optimizer
 
 # -----------------------------
 # PAGE SETUP
@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔵 AFL Fantasy Optimizer 🔵")
+st.title("🔥 AFL Fantasy Optimizer")
 st.write("Upload your AFL Fantasy CSV and run the optimizer.")
 
 # -----------------------------
@@ -121,5 +121,3 @@ if uploaded_file is not None:
                 st.exception(e)
 
     os.unlink(temp_csv_path)
-
-
